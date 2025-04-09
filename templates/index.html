@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcript Viewer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .transcript-container {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .timestamp {
+            color: #666;
+            font-family: monospace;
+        }
+        .transcript-text {
+            margin-left: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">YouTube Transcript Viewer</h1>
+        
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex gap-4">
+                <input type="text" id="youtubeUrl" 
+                       class="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Enter YouTube URL (e.g., https://www.youtube.com/watch?v=...)">
+                <button onclick="getTranscript()" 
+                        class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                    Get Transcript
+                </button>
+            </div>
+        </div>
+
+        <div id="error" class="hidden max-w-2xl mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"></div>
+
+        <div id="transcriptContainer" class="hidden max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 transcript-container">
+            <div id="transcriptContent"></div>
+        </div>
+    </div>
+
+    <script>
+        async function getTranscript() {
+            const urlInput = document.getElementById('youtubeUrl');
+            const errorDiv = document.getElementById('error');
+            const transcriptContainer = document.getElementById('transcriptContainer');
+            const transcriptContent = document.getElementById('transcriptContent');
+
+            errorDiv.classList.add('hidden');
+            transcriptContainer.classList.add('hidden');
+
+            try {
+                const response = await fetch('/get_transcript', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: urlInput.value })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    transcriptContent.innerHTML = data.transcript
+                        .map(item => `
+                            <div class="py-2 border-b last:border-b-0">
+                                <span class="timestamp">${formatTime(item.start)}</span>
+                                <span class="transcript-text">${item.text}</span>
+                            </div>
+                        `).join('');
+                    transcriptContainer.classList.remove('hidden');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html> 
