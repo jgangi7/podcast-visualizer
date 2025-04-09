@@ -259,8 +259,17 @@ def get_transcript():
     
     try:
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        sentences, topics = group_into_sentences(transcript, video_id)
-        return jsonify({'sentences': sentences, 'topics': topics})
+        sentences = [
+            {
+                'text': segment['text'],
+                'start': segment['start'],
+                'end': segment['start'] + segment['duration'],
+                'segments': [segment],
+                'topic': None
+            }
+            for segment in transcript
+        ]
+        return jsonify({'sentences': sentences})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 

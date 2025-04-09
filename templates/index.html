@@ -143,31 +143,6 @@
     </div>
 
     <script>
-        // Function to generate a random color for a topic
-        function getRandomColor() {
-            const colors = [
-                { bg: '#dbeafe', text: '#1e40af' }, // blue
-                { bg: '#fee2e2', text: '#991b1b' }, // red
-                { bg: '#dcfce7', text: '#166534' }, // green
-                { bg: '#fef3c7', text: '#92400e' }, // yellow
-                { bg: '#e0e7ff', text: '#3730a3' }, // indigo
-                { bg: '#d1fae5', text: '#065f46' }, // teal
-                { bg: '#f3e8ff', text: '#6b21a8' }, // purple
-                { bg: '#e0f2fe', text: '#0369a1' }, // sky
-                { bg: '#fae8ff', text: '#86198f' }, // fuchsia
-                { bg: '#fef9c3', text: '#854d0e' }  // amber
-            ];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-
-        // Function to create a CSS class for a topic
-        function createTopicStyle(topic) {
-            const color = getRandomColor();
-            const style = document.createElement('style');
-            style.textContent = `.topic-${topic.replace(/\s+/g, '-').toLowerCase()} { background-color: ${color.bg}; color: ${color.text}; }`;
-            document.head.appendChild(style);
-        }
-
         // Function to toggle a topic section
         function toggleTopicSection(sectionId) {
             const content = document.getElementById(`topic-content-${sectionId}`);
@@ -232,93 +207,18 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Create styles for each topic
-                    data.topics.forEach(topic => {
-                        createTopicStyle(topic);
-                    });
-                    
-                    // Group sentences by topic
-                    const topicGroups = {};
-                    data.sentences.forEach(sentence => {
-                        if (!topicGroups[sentence.topic]) {
-                            topicGroups[sentence.topic] = [];
-                        }
-                        topicGroups[sentence.topic].push(sentence);
-                    });
-                    
-                    // Render the transcript with collapsible topic sections
-                    transcriptContent.innerHTML = Object.entries(topicGroups)
-                        .map(([topic, sentences], index) => {
-                            // Group sentences by pauses
-                            const sentenceGroups = [];
-                            let currentGroup = [];
-                            
-                            for (let i = 0; i < sentences.length; i++) {
-                                const sentence = sentences[i];
-                                
-                                if (i < sentences.length - 1) {
-                                    const nextSentence = sentences[i + 1];
-                                    const pauseDuration = nextSentence.start - sentence.end;
-                                    
-                                    // If there's a significant pause (more than 1.5 seconds), start a new group
-                                    if (pauseDuration > 1.5) {
-                                        currentGroup.push(sentence);
-                                        sentenceGroups.push([...currentGroup]);
-                                        currentGroup = [];
-                                    } else {
-                                        currentGroup.push(sentence);
-                                    }
-                                } else {
-                                    currentGroup.push(sentence);
-                                    sentenceGroups.push([...currentGroup]);
-                                }
-                            }
-                            
-                            return `
-                                <div class="topic-section">
-                                    <div class="topic-section-header" onclick="toggleTopicSection(${index})">
-                                        <div class="flex items-center">
-                                            <span class="topic-label topic-${topic.replace(/\s+/g, '-').toLowerCase()}">${topic}</span>
-                                            <span class="text-sm text-gray-500 ml-2">${formatTimeRange(sentences[0].start, sentences[sentences.length - 1].end)}</span>
-                                        </div>
-                                        <svg id="topic-toggle-${index}" class="topic-section-toggle w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </div>
-                                    <div id="topic-content-${index}" class="topic-section-content">
-                                        ${sentenceGroups.map((group, groupIndex) => `
-                                            <div class="sentence-group">
-                                                ${group.map((sentence, sentenceIndex) => `
-                                                    <div class="py-2 ${sentenceIndex < group.length - 1 ? 'border-b' : ''}">
-                                                        <div class="sentence-header flex items-start" onclick="toggleSegments(${index}-${groupIndex}-${sentenceIndex})">
-                                                            <span class="toggle-icon mr-1">▶</span>
-                                                            <span class="timestamp mr-2">${formatTimeRange(sentence.start, sentence.end)}</span>
-                                                            <span class="transcript-text flex-1">${sentence.text}</span>
-                                                            ${sentenceIndex < group.length - 1 ? 
-                                                                `<span class="pause-indicator">(${formatPauseDuration(sentence.end, group[sentenceIndex + 1].start)})</span>` : 
-                                                                ''}
-                                                        </div>
-                                                        <div id="segments-${index}-${groupIndex}-${sentenceIndex}" class="segments">
-                                                            ${sentence.segments.map(segment => `
-                                                                <div class="segment">
-                                                                    <span class="timestamp">${formatTime(segment.start)}</span>
-                                                                    <span class="transcript-text">${segment.text}</span>
-                                                                </div>
-                                                            `).join('')}
-                                                        </div>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                        `).join('')}
-                                    </div>
+                    // Render the transcript
+                    transcriptContent.innerHTML = data.sentences.map((sentence, index) => `
+                        <div class="sentence-group">
+                            <div class="py-2">
+                                <div class="sentence-header flex items-start">
+                                    <span class="toggle-icon mr-1">▶</span>
+                                    <span class="timestamp mr-2">${formatTimeRange(sentence.start, sentence.end)}</span>
+                                    <span class="transcript-text flex-1">${sentence.text}</span>
                                 </div>
-                            `;
-                        }).join('');
-                    
-                    // Show the first topic section by default
-                    if (Object.keys(topicGroups).length > 0) {
-                        toggleTopicSection(0);
-                    }
+                            </div>
+                        </div>
+                    `).join('');
                     
                     transcriptContainer.classList.remove('hidden');
                 } else {
