@@ -206,9 +206,68 @@
                 svg.style.height = 'auto';
                 svg.style.maxHeight = '800px';
                 
-                // Add zoom functionality
+                // Initialize zoom and pan state
                 let scale = 1;
                 const zoomStep = 0.1;
+                const minZoom = 1.0;  // Changed from 0.5 to 1.0 to prevent zooming out
+                const maxZoom = 2;
+                let isDragging = false;
+                let startX, startY;
+                let translateX = 0;
+                let translateY = 0;
+                
+                // Add mousewheel zoom
+                visualizationDiv.addEventListener('wheel', function(e) {
+                    e.preventDefault();  // Prevent page scroll
+                    
+                    // Calculate new scale
+                    const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+                    const newScale = Math.max(minZoom, Math.min(maxZoom, scale + delta));
+                    
+                    // Only proceed if we're zooming in or if we're zooming out but still above minZoom
+                    if (newScale !== scale && (delta > 0 || scale > minZoom)) {
+                        scale = newScale;
+                        
+                        // Get mouse position relative to the SVG
+                        const rect = svg.getBoundingClientRect();
+                        const mouseX = e.clientX - rect.left;
+                        const mouseY = e.clientY - rect.top;
+                        
+                        // Calculate transform origin as percentage
+                        const originX = (mouseX / rect.width) * 100;
+                        const originY = (mouseY / rect.height) * 100;
+                        
+                        // Apply transform with calculated origin
+                        svg.style.transformOrigin = `${originX}% ${originY}%`;
+                        updateTransform();
+                    }
+                }, { passive: false });
+
+                // Add drag functionality
+                visualizationDiv.addEventListener('mousedown', function(e) {
+                    isDragging = true;
+                    startX = e.clientX - translateX;
+                    startY = e.clientY - translateY;
+                    visualizationDiv.style.cursor = 'grabbing';
+                });
+
+                document.addEventListener('mousemove', function(e) {
+                    if (isDragging) {
+                        translateX = e.clientX - startX;
+                        translateY = e.clientY - startY;
+                        updateTransform();
+                    }
+                });
+
+                document.addEventListener('mouseup', function() {
+                    isDragging = false;
+                    visualizationDiv.style.cursor = 'grab';
+                });
+
+                // Helper function to update transform
+                function updateTransform() {
+                    svg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                }
                 
                 // Add zoom controls
                 const zoomControls = document.createElement('div');
@@ -219,6 +278,9 @@
                     <button class="btn btn-sm btn-outline-secondary" onclick="resetVisualization()">Reset</button>
                 `;
                 visualizationContainer.insertBefore(zoomControls, visualizationDiv);
+
+                // Initialize cursor style
+                visualizationDiv.style.cursor = 'grab';
             }
         }
 
@@ -226,17 +288,28 @@
             const svg = document.querySelector('#chapter-visualization svg');
             if (svg) {
                 const currentTransform = svg.style.transform || 'scale(1)';
-                const currentScale = parseFloat(currentTransform.replace('scale(', '').replace(')', '')) || 1;
-                const newScale = Math.max(0.5, Math.min(2, currentScale + delta));
-                svg.style.transform = `scale(${newScale})`;
-                svg.style.transformOrigin = 'center';
+                const currentScale = parseFloat(currentTransform.match(/scale\((.*?)\)/)?.[1] || '1');
+                const newScale = Math.max(1.0, Math.min(2, currentScale + delta));  // Changed minZoom to 1.0
+                
+                // Only proceed if we're zooming in or if we're zooming out but still above 1.0
+                if (delta > 0 || currentScale > 1.0) {
+                    // Keep zoom centered when using buttons
+                    svg.style.transformOrigin = 'center';
+                    const translateMatch = currentTransform.match(/translate\((.*?), (.*?)\)/);
+                    const translateX = translateMatch ? translateMatch[1] : '0px';
+                    const translateY = translateMatch ? translateMatch[2] : '0px';
+                    svg.style.transform = `translate(${translateX}, ${translateY}) scale(${newScale})`;
+                }
             }
         }
 
         function resetVisualization() {
             const svg = document.querySelector('#chapter-visualization svg');
+            const visualizationDiv = document.getElementById('chapter-visualization');
             if (svg) {
                 svg.style.transform = 'scale(1)';
+                svg.style.transformOrigin = 'center';
+                visualizationDiv.style.cursor = 'grab';
             }
         }
 
@@ -258,13 +331,22 @@
 
         #chapter-visualization {
             width: 100%;
-            overflow: auto;
+            overflow: hidden;
             margin: 0 auto;
             text-align: center;
+            position: relative;  /* For proper cursor handling */
+            touch-action: none;  /* Disable browser touch handling */
         }
 
         #chapter-visualization svg {
-            transition: transform 0.2s ease-in-out;
+            transition: transform 0.1s ease-out;
+            transform-origin: center;
+            will-change: transform;  /* Optimize for animations */
+        }
+
+        /* Remove transition during drag */
+        #chapter-visualization.dragging svg {
+            transition: none;
         }
 
         .zoom-controls {
