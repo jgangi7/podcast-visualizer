@@ -1,0 +1,77 @@
+digraph ConversationFlow {
+    // Graph settings
+    rankdir=LR;
+    splines=ortho;
+    node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Arial"];
+    edge [color="#666666"];
+
+    // Main topic node
+    Conversation [
+        shape=box,
+        style="rounded,filled",
+        fillcolor="#90EE90",
+        label="Conversation"
+    ];
+
+    // First level nodes
+    TopicAnalysis [label="Topic Analysis"];
+    SentimentAnalysis [label="Sentiment Analysis"];
+    EntityExtraction [label="Entity Extraction"];
+    TimelineAnalysis [label="Timeline Analysis"];
+    KeypointSummary [label="Keypoint Summary"];
+
+    // Second level nodes for Topic Analysis
+    TopicIdentification [label="Topic Identification"];
+    TopicClustering [label="Topic Clustering"];
+    SubtopicAnalysis [label="Subtopic Analysis"];
+
+    // Second level nodes for Timeline
+    TimeSegmentation [label="Time Segmentation"];
+    ChapterMarking [label="Chapter Marking"];
+
+    // Connections
+    Conversation -> TopicAnalysis;
+    Conversation -> SentimentAnalysis;
+    Conversation -> EntityExtraction;
+    Conversation -> TimelineAnalysis;
+    Conversation -> KeypointSummary;
+
+    // Topic Analysis subflow
+    {
+        rank=same;
+        TopicAnalysis -> TopicIdentification;
+        TopicIdentification -> TopicClustering;
+        TopicClustering -> SubtopicAnalysis;
+    }
+
+    // Timeline Analysis subflow
+    {
+        rank=same;
+        TimelineAnalysis -> TimeSegmentation;
+        TimeSegmentation -> ChapterMarking;
+    }
+
+    // Add icons/indicators (using Unicode characters as placeholders)
+    node [shape=circle, style=filled, fillcolor="#FFD700", fontcolor=black, width=0.3];
+    TopicIcon [label="⏱"];
+    SentimentIcon [label="😊"];
+    EntityIcon [label="👤"];
+    TimelineIcon [label="📅"];
+    SummaryIcon [label="📝"];
+
+    // Position icons next to their respective nodes
+    TopicIcon -> TopicAnalysis [style=invis];
+    SentimentIcon -> SentimentAnalysis [style=invis];
+    EntityIcon -> EntityExtraction [style=invis];
+    TimelineIcon -> TimelineAnalysis [style=invis];
+    SummaryIcon -> KeypointSummary [style=invis];
+
+    // Invisible edges to help with layout
+    {
+        edge [style=invis];
+        TopicAnalysis -> SentimentAnalysis;
+        SentimentAnalysis -> EntityExtraction;
+        EntityExtraction -> TimelineAnalysis;
+        TimelineAnalysis -> KeypointSummary;
+    }
+} 

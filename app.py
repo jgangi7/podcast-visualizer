@@ -4,6 +4,7 @@ from googleapiclient.discovery import build
 import re
 import os
 from dotenv import load_dotenv
+from generate_youtube_graph import generate_youtube_chapters_flow
 
 # Load environment variables from .env file
 load_dotenv()
@@ -31,6 +32,22 @@ def extract_video_id(url):
         if match:
             return match.group(1)
     return None
+
+def get_video_transcript(video_id):
+    """Fetch video transcript using YouTube Transcript API"""
+    try:
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        # Convert transcript to our format
+        formatted_transcript = ""
+        for entry in transcript:
+            time = int(entry['start'])
+            minutes = time // 60
+            seconds = time % 60
+            formatted_transcript += f"{minutes:02d}:{seconds:02d} - {entry['text']}\n"
+        return formatted_transcript
+    except Exception as e:
+        print(f"Error fetching transcript: {str(e)}")
+        return None
 
 def get_video_chapters(video_id):
     """Fetch video chapters using YouTube Data API"""
@@ -68,12 +85,12 @@ def get_video_chapters(video_id):
                     seconds = minutes * 60 + seconds
                 
                 chapters.append({
-                    'time': seconds,
+                    'start_time': seconds,
                     'title': title.strip()
                 })
         
         # Sort chapters by time
-        chapters.sort(key=lambda x: x['time'])
+        chapters.sort(key=lambda x: x['start_time'])
         return chapters
 
     except Exception as e:
@@ -87,38 +104,36 @@ def index():
 @app.route('/get_transcript', methods=['POST'])
 def get_transcript():
     try:
-        url = request.json['url']
-        video_id = extract_video_id(url)
+        # Get video URL from request and clean it
+        video_url = request.json.get('video_url', '')
+        # Remove @ symbol if present at the start of the URL
+        video_url = video_url.lstrip('@')
+        
+        video_id = extract_video_id(video_url)
+        print(f"Extracted video ID: {video_id}")  # Debug print
         
         if not video_id:
             return jsonify({'error': 'Invalid YouTube URL'}), 400
-        
-        # Get the transcript
-        try:
-            youtube_transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        except Exception as e:
-            return jsonify({'error': f'Failed to get transcript: {str(e)}'}), 400
-        
-        # Get video chapters
+            
+        transcript = get_video_transcript(video_id)
+        if not transcript:
+            return jsonify({'error': 'Failed to fetch transcript'}), 400
+            
         chapters = get_video_chapters(video_id)
         
-        # Convert YouTube transcript format to our format
-        transcript_text = ""
-        for segment in youtube_transcript:
-            # Convert seconds to MM:SS format
-            minutes = int(segment['start'] // 60)
-            seconds = int(segment['start'] % 60)
-            timestamp = f"{minutes:02d}:{seconds:02d}"
-            transcript_text += f"{timestamp} - {segment['text']}\n"
+        # Generate the chapter visualization
+        visualization_svg = None
+        if chapters:
+            visualization_svg = generate_youtube_chapters_flow(chapters)
         
-        # Return both transcript and chapters
         return jsonify({
-            'success': True,
-            'transcript': transcript_text,
-            'chapters': chapters
+            'transcript': transcript,
+            'chapters': chapters,
+            'visualization': visualization_svg
         })
         
     except Exception as e:
+        print(f"Error in get_transcript: {str(e)}")  # Debug print
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

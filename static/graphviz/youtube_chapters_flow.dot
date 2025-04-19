@@ -1,0 +1,91 @@
+digraph YoutubeChaptersFlow {
+    // Graph settings
+    rankdir=LR;
+    splines=curved;
+    node [fontname="Arial"];
+    edge [color="#666666"];
+
+    // Main chapter node style
+    node [
+        shape=box,
+        style="rounded,filled",
+        fillcolor="#90EE90",
+        fontsize=14,
+        width=2
+    ];
+
+    // Chapter nodes (these will be populated dynamically)
+    Chapter1 [label="Chapter 1\n(0:00-15:30)"];
+    Chapter2 [label="Chapter 2\n(15:30-32:45)"];
+    Chapter3 [label="Chapter 3\n(32:45-45:20)"];
+
+    // Subtopic node style
+    node [
+        shape=box,
+        style="rounded,filled",
+        fillcolor="#f0f0f0",
+        fontsize=12,
+        width=1.5
+    ];
+
+    // Subtopics for Chapter 1
+    Topic1_1 [label="Main Discussion"];
+    Topic1_2 [label="Key Points"];
+    Topic1_3 [label="Related Topics"];
+
+    // Subtopics for Chapter 2
+    Topic2_1 [label="Analysis"];
+    Topic2_2 [label="Examples"];
+
+    // Subtopics for Chapter 3
+    Topic3_1 [label="Summary"];
+    Topic3_2 [label="Conclusions"];
+
+    // Add clock icons using Unicode
+    node [
+        shape=circle,
+        style=filled,
+        fillcolor="#FFD700",
+        fontcolor=black,
+        width=0.3,
+        height=0.3,
+        fontsize=10
+    ];
+
+    Clock1 [label="⏱"];
+    Clock2 [label="⏱"];
+    Clock3 [label="⏱"];
+
+    // Connections
+    {
+        edge [color="#90EE90", penwidth=2];
+        Chapter1 -> Chapter2 -> Chapter3;
+    }
+
+    // Subtopic connections
+    {
+        edge [color="#666666", penwidth=1];
+        Chapter1 -> {Topic1_1, Topic1_2, Topic1_3};
+        Chapter2 -> {Topic2_1, Topic2_2};
+        Chapter3 -> {Topic3_1, Topic3_2};
+    }
+
+    // Position clock icons
+    {
+        edge [style=invis];
+        Clock1 -> Chapter1;
+        Clock2 -> Chapter2;
+        Clock3 -> Chapter3;
+    }
+
+    // Rank settings to control layout
+    {
+        rank=same; Clock1; Chapter1;
+    }
+    {
+        rank=same; Clock2; Chapter2;
+    }
+    {
+        rank=same; Clock3; Chapter3;
+    }
+} 

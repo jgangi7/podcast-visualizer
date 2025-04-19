@@ -39,6 +39,11 @@
         </div>
 
         <div id="transcriptContainer" class="transcript-container"></div>
+
+        <div id="visualization-container" class="mt-4" style="display: none;">
+            <h3>Chapter Flow Visualization</h3>
+            <div id="chapter-visualization"></div>
+        </div>
     </div>
 
     <script>
@@ -94,7 +99,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ url: url })
+                body: JSON.stringify({ video_url: url })
             })
             .then(response => response.json())
             .then(data => {
@@ -105,15 +110,19 @@
                     return;
                 }
 
-                if (data.success) {
-                    if (data.transcript) {
-                        displayTranscript(data.transcript);
-                        document.getElementById('transcriptContainer').style.display = 'block';
-                    }
-                    if (data.chapters && data.chapters.length > 0) {
-                        displayChapters(data.chapters);
-                        document.getElementById('chaptersContainer').style.display = 'block';
-                    }
+                if (data.transcript) {
+                    displayTranscript(data.transcript);
+                    document.getElementById('transcriptContainer').style.display = 'block';
+                }
+                
+                if (data.chapters && data.chapters.length > 0) {
+                    displayChapters(data.chapters);
+                    document.getElementById('chaptersContainer').style.display = 'block';
+                }
+                
+                if (data.visualization) {
+                    displayVisualization(data.visualization);
+                    document.getElementById('visualization-container').style.display = 'block';
                 }
             })
             .catch(error => {
@@ -184,11 +193,96 @@
             container.style.display = 'block';
         }
 
+        function displayVisualization(visualization) {
+            const visualizationContainer = document.getElementById('visualization-container');
+            const visualizationDiv = document.getElementById('chapter-visualization');
+            visualizationDiv.innerHTML = visualization;  // Set SVG content directly
+            visualizationContainer.style.display = 'block';
+            
+            // Add zoom controls
+            const svg = visualizationDiv.querySelector('svg');
+            if (svg) {
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxHeight = '800px';
+                
+                // Add zoom functionality
+                let scale = 1;
+                const zoomStep = 0.1;
+                
+                // Add zoom controls
+                const zoomControls = document.createElement('div');
+                zoomControls.className = 'zoom-controls';
+                zoomControls.innerHTML = `
+                    <button class="btn btn-sm btn-outline-primary" onclick="zoomVisualization(${zoomStep})">+</button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="zoomVisualization(${-zoomStep})">-</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="resetVisualization()">Reset</button>
+                `;
+                visualizationContainer.insertBefore(zoomControls, visualizationDiv);
+            }
+        }
+
+        function zoomVisualization(delta) {
+            const svg = document.querySelector('#chapter-visualization svg');
+            if (svg) {
+                const currentTransform = svg.style.transform || 'scale(1)';
+                const currentScale = parseFloat(currentTransform.replace('scale(', '').replace(')', '')) || 1;
+                const newScale = Math.max(0.5, Math.min(2, currentScale + delta));
+                svg.style.transform = `scale(${newScale})`;
+                svg.style.transformOrigin = 'center';
+            }
+        }
+
+        function resetVisualization() {
+            const svg = document.querySelector('#chapter-visualization svg');
+            if (svg) {
+                svg.style.transform = 'scale(1)';
+            }
+        }
+
         function showError(message) {
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
         }
     </script>
+
+    <style>
+        #visualization-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        #chapter-visualization {
+            width: 100%;
+            overflow: auto;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        #chapter-visualization svg {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .zoom-controls {
+            margin-bottom: 10px;
+            text-align: right;
+        }
+
+        .zoom-controls button {
+            margin-left: 5px;
+        }
+
+        [data-theme='dark'] #visualization-container {
+            background: #2d2d2d;
+        }
+
+        [data-theme='dark'] #chapter-visualization svg {
+            filter: invert(0.85);
+        }
+    </style>
 </body>
 </html> 
