@@ -1,66 +1,93 @@
-# YouTube Transcript Viewer
+# YouTube Transcript Analyzer
 
-A web application that allows you to view transcripts from YouTube videos with timestamps, grouped by sentences, conversation pauses, and topics.
+A web application that analyzes YouTube video transcripts using open-source language models to extract topics, entities, and conversation structure.
 
 ## Features
 
-- Extract transcripts from YouTube videos
-- Group transcript segments into complete sentences
-- Detect and group sentences by conversation pauses
-- Automatically detect topics for each part of the conversation
-- Display time ranges for each sentence
-- Show pause durations between sentences
-- Expandable view to see individual transcript segments
-- Modern, responsive UI
-- Error handling for invalid URLs or unavailable transcripts
+- YouTube transcript extraction with timestamps
+- Zero-shot topic classification using BART
+- Named entity recognition using BERT and spaCy
+- Conversation tree visualization
+- Interactive timeline view
+- No API keys required - everything runs locally
 
-## Setup
+## Requirements
 
-1. Install the required dependencies:
+- Python 3.8+
+- pip (Python package manager)
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/youtube-transcript-analyzer.git
+cd youtube-transcript-analyzer
+```
+
+2. Create a virtual environment (recommended):
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Download the required NLTK data:
+4. Download spaCy model:
 ```bash
-python download_nltk_data.py
+python -m spacy download en_core_web_sm
 ```
 
-3. Run the application:
+## Usage
+
+1. Start the Flask server:
 ```bash
 python app.py
 ```
 
-4. Open your web browser and navigate to `http://localhost:5000`
+2. Open your web browser and navigate to:
+```
+http://localhost:5000
+```
 
-## Usage
+3. Enter a YouTube URL and click "Analyze Transcript"
 
-1. Paste a YouTube video URL into the input field (e.g., https://www.youtube.com/watch?v=NRVEkc9lxH0)
-2. Click "Get Transcript"
-3. The transcript will be displayed with sentences grouped by conversation pauses and topics
-4. Each group is labeled with its detected topic (e.g., "intro", "species", "direwolves", "game of thrones")
-5. Each sentence shows its time range and any pause duration before the next sentence
-6. Click on a sentence to expand and see the individual transcript segments
+4. View the analysis results:
+   - Topics with confidence scores
+   - Named entities grouped by type
+   - Interactive conversation timeline
+   - Full transcript with timestamps
 
-## Topic Detection
+## How It Works
 
-The application automatically detects topics for different parts of the conversation based on keyword matching. Supported topics include:
+1. **Transcript Extraction**: Uses the YouTube Transcript API to fetch video transcripts with timestamps.
 
-- intro
-- goodbye
-- species
-- direwolves
-- game of thrones
-- biology
-- history
-- science
-- education
-- technology
-- general (default when no specific topic is detected)
+2. **Topic Classification**: Uses BART-large-MNLI for zero-shot classification of transcript segments into predefined topics.
 
-## Requirements
+3. **Entity Recognition**: Combines BERT and spaCy for comprehensive named entity extraction.
 
-- Python 3.7+
-- Flask
-- youtube-transcript-api
-- NLTK 
+4. **Conversation Tree**: Builds a hierarchical structure of the conversation using NetworkX.
+
+5. **Visualization**: Creates both static (PNG) and interactive (HTML) visualizations using Plotly.
+
+## Project Structure
+
+```
+youtube-transcript-analyzer/
+├── app.py                 # Main Flask application
+├── llm_analyzer.py        # LLM-based analysis module
+├── requirements.txt       # Python dependencies
+├── static/               # Static files (visualizations)
+└── templates/            # HTML templates
+    └── index.html        # Main web interface
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details. 

@@ -9,8 +9,13 @@ import string
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 import numpy as np
+from llm_analyzer import TranscriptAnalyzer
+import os
 
 app = Flask(__name__)
+
+# Initialize the transcript analyzer
+analyzer = TranscriptAnalyzer()
 
 # Download required NLTK data
 try:
@@ -249,29 +254,30 @@ def index():
 
 @app.route('/get_transcript', methods=['POST'])
 def get_transcript():
-    url = request.json.get('url')
-    if not url:
-        return jsonify({'error': 'No URL provided'}), 400
-    
-    video_id = extract_video_id(url)
-    if not video_id:
-        return jsonify({'error': 'Invalid YouTube URL'}), 400
-    
     try:
+        url = request.json['url']
+        video_id = extract_video_id(url)
+        
+        if not video_id:
+            return jsonify({'error': 'Invalid YouTube URL'}), 400
+        
+        # Get the transcript
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        sentences = [
-            {
-                'text': segment['text'],
-                'start': segment['start'],
-                'end': segment['start'] + segment['duration'],
-                'segments': [segment],
-                'topic': None
-            }
-            for segment in transcript
-        ]
-        return jsonify({'sentences': sentences})
+        
+        # Analyze the transcript using LLM
+        analysis_results = analyzer.analyze_transcript(transcript)
+        
+        # Generate visualizations
+        static_path = os.path.join('static', 'conversation_tree.png')
+        analyzer.visualize_tree(analysis_results['tree'], static_path)
+        
+        return jsonify({
+            'transcript': transcript,
+            'analysis': analysis_results
+        })
+        
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True) 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Transcript Viewer</title>
+    <title>YouTube Transcript Analyzer</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         .transcript-container {
@@ -41,56 +41,6 @@
         .toggle-icon.expanded {
             transform: rotate(90deg);
         }
-        .pause-indicator {
-            font-size: 0.75rem;
-            color: #9ca3af;
-            margin-left: 0.5rem;
-        }
-        .sentence-group {
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px dashed #e5e7eb;
-        }
-        .topic-label {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            margin-right: 0.5rem;
-            text-transform: capitalize;
-        }
-        .topic-general { background-color: #f3f4f6; color: #4b5563; }
-        .topic-section {
-            margin-bottom: 1.5rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            overflow: hidden;
-        }
-        .topic-section-header {
-            padding: 0.75rem 1rem;
-            background-color: #f9fafb;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .topic-section-header:hover {
-            background-color: #f3f4f6;
-        }
-        .topic-section-content {
-            padding: 1rem;
-            display: none;
-        }
-        .topic-section-content.visible {
-            display: block;
-        }
-        .topic-section-toggle {
-            transition: transform 0.2s;
-        }
-        .topic-section-toggle.expanded {
-            transform: rotate(180deg);
-        }
         .loading-spinner {
             display: inline-block;
             width: 1.5rem;
@@ -110,54 +60,84 @@
             margin-top: 0.5rem;
             text-align: center;
         }
+        .entity-tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin: 0.25rem;
+            background-color: #e5e7eb;
+        }
+        .topic-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin: 0.25rem;
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .confidence-bar {
+            height: 0.5rem;
+            background-color: #e5e7eb;
+            border-radius: 0.25rem;
+            margin-top: 0.25rem;
+        }
+        .confidence-level {
+            height: 100%;
+            background-color: #3b82f6;
+            border-radius: 0.25rem;
+            transition: width 0.3s ease;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-center mb-8">YouTube Transcript Viewer</h1>
+        <h1 class="text-3xl font-bold text-center mb-8">YouTube Transcript Analyzer</h1>
         
-        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mb-8">
+        <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 mb-8">
             <div class="flex gap-4">
                 <input type="text" id="youtubeUrl" 
                        class="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                        placeholder="Enter YouTube URL (e.g., https://www.youtube.com/watch?v=...)">
                 <button id="getTranscriptBtn" onclick="getTranscript()" 
                         class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center">
-                    <span id="buttonText">Get Transcript</span>
+                    <span id="buttonText">Analyze Transcript</span>
                 </button>
             </div>
         </div>
 
-        <div id="error" class="hidden max-w-2xl mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"></div>
+        <div id="error" class="hidden max-w-4xl mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"></div>
         
-        <div id="loadingIndicator" class="hidden max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 mb-4">
+        <div id="loadingIndicator" class="hidden max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 mb-4">
             <div class="flex flex-col items-center justify-center py-4">
                 <div class="loading-spinner"></div>
-                <p class="loading-text mt-2">Loading transcript...</p>
+                <p class="loading-text mt-2">Analyzing transcript...</p>
             </div>
         </div>
 
-        <div id="transcriptContainer" class="hidden max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 transcript-container">
+        <div id="analysisContainer" class="hidden max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Topics</h2>
+                <div id="topicsContent"></div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Named Entities</h2>
+                <div id="entitiesContent"></div>
+            </div>
+        </div>
+
+        <div id="transcriptContainer" class="hidden max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 transcript-container">
             <div id="transcriptContent"></div>
+        </div>
+
+        <div id="visualizationContainer" class="hidden max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6 mt-8">
+            <h2 class="text-xl font-semibold mb-4">Conversation Timeline</h2>
+            <div id="visualizationContent"></div>
         </div>
     </div>
 
     <script>
-        // Function to toggle a topic section
-        function toggleTopicSection(sectionId) {
-            const content = document.getElementById(`topic-content-${sectionId}`);
-            const toggle = document.getElementById(`topic-toggle-${sectionId}`);
-            
-            if (content.classList.contains('visible')) {
-                content.classList.remove('visible');
-                toggle.classList.remove('expanded');
-            } else {
-                content.classList.add('visible');
-                toggle.classList.add('expanded');
-            }
-        }
-
-        // Function to set loading state
         function setLoading(isLoading) {
             const button = document.getElementById('getTranscriptBtn');
             const buttonText = document.getElementById('buttonText');
@@ -166,23 +146,83 @@
             if (isLoading) {
                 button.disabled = true;
                 button.classList.add('opacity-75', 'cursor-not-allowed');
-                buttonText.innerHTML = '<div class="loading-spinner"></div>Loading...';
+                buttonText.innerHTML = '<div class="loading-spinner"></div>Analyzing...';
                 loadingIndicator.classList.remove('hidden');
             } else {
                 button.disabled = false;
                 button.classList.remove('opacity-75', 'cursor-not-allowed');
-                buttonText.textContent = 'Get Transcript';
+                buttonText.textContent = 'Analyze Transcript';
                 loadingIndicator.classList.add('hidden');
             }
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function renderTopics(topics) {
+            const topicsContent = document.getElementById('topicsContent');
+            topicsContent.innerHTML = topics.map(topic => `
+                <div class="mb-4">
+                    <div class="flex justify-between items-center">
+                        <span class="topic-badge">${topic.topic}</span>
+                        <span class="text-sm text-gray-600">${(topic.confidence * 100).toFixed(1)}%</span>
+                    </div>
+                    <div class="confidence-bar">
+                        <div class="confidence-level" style="width: ${topic.confidence * 100}%"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderEntities(entities) {
+            const entitiesContent = document.getElementById('entitiesContent');
+            const entityGroups = {};
+            
+            // Group entities by type
+            entities.forEach(entity => {
+                if (!entityGroups[entity.label]) {
+                    entityGroups[entity.label] = new Set();
+                }
+                entityGroups[entity.label].add(entity.text);
+            });
+            
+            // Render grouped entities
+            entitiesContent.innerHTML = Object.entries(entityGroups).map(([label, texts]) => `
+                <div class="mb-4">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">${label}</h3>
+                    <div class="flex flex-wrap">
+                        ${Array.from(texts).map(text => `
+                            <span class="entity-tag">${text}</span>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTranscript(transcript) {
+            const transcriptContent = document.getElementById('transcriptContent');
+            transcriptContent.innerHTML = transcript.map((segment, index) => `
+                <div class="sentence-group">
+                    <div class="py-2">
+                        <div class="sentence-header flex items-start">
+                            <span class="timestamp mr-2">${formatTime(segment.start)}</span>
+                            <span class="transcript-text flex-1">${segment.text}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
         async function getTranscript() {
             const urlInput = document.getElementById('youtubeUrl');
             const errorDiv = document.getElementById('error');
             const transcriptContainer = document.getElementById('transcriptContainer');
-            const transcriptContent = document.getElementById('transcriptContent');
+            const analysisContainer = document.getElementById('analysisContainer');
+            const visualizationContainer = document.getElementById('visualizationContainer');
 
-            // Validate input
             if (!urlInput.value.trim()) {
                 errorDiv.textContent = 'Please enter a YouTube URL';
                 errorDiv.classList.remove('hidden');
@@ -191,8 +231,9 @@
 
             errorDiv.classList.add('hidden');
             transcriptContainer.classList.add('hidden');
+            analysisContainer.classList.add('hidden');
+            visualizationContainer.classList.add('hidden');
             
-            // Set loading state
             setLoading(true);
 
             try {
@@ -207,20 +248,26 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Render the transcript
-                    transcriptContent.innerHTML = data.sentences.map((sentence, index) => `
-                        <div class="sentence-group">
-                            <div class="py-2">
-                                <div class="sentence-header flex items-start">
-                                    <span class="toggle-icon mr-1">▶</span>
-                                    <span class="timestamp mr-2">${formatTimeRange(sentence.start, sentence.end)}</span>
-                                    <span class="transcript-text flex-1">${sentence.text}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
+                    // Render analysis results
+                    renderTopics(data.analysis.topics);
+                    renderEntities(data.analysis.entities);
                     
+                    // Render transcript
+                    renderTranscript(data.transcript);
+                    
+                    // Show containers
+                    analysisContainer.classList.remove('hidden');
                     transcriptContainer.classList.remove('hidden');
+                    visualizationContainer.classList.remove('hidden');
+                    
+                    // Load the interactive visualization
+                    const iframe = document.createElement('iframe');
+                    iframe.src = '/static/conversation_tree.html';
+                    iframe.style.width = '100%';
+                    iframe.style.height = '600px';
+                    iframe.style.border = 'none';
+                    document.getElementById('visualizationContent').innerHTML = '';
+                    document.getElementById('visualizationContent').appendChild(iframe);
                 } else {
                     throw new Error(data.error);
                 }
@@ -228,40 +275,7 @@
                 errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
             } finally {
-                // Reset loading state
                 setLoading(false);
-            }
-        }
-
-        function toggleSegments(id) {
-            const segmentsContainer = document.getElementById(`segments-${id}`);
-            const toggleIcon = segmentsContainer.previousElementSibling.querySelector('.toggle-icon');
-            
-            if (segmentsContainer.classList.contains('visible')) {
-                segmentsContainer.classList.remove('visible');
-                toggleIcon.classList.remove('expanded');
-            } else {
-                segmentsContainer.classList.add('visible');
-                toggleIcon.classList.add('expanded');
-            }
-        }
-
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = Math.floor(seconds % 60);
-            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-        }
-
-        function formatTimeRange(start, end) {
-            return `${formatTime(start)} - ${formatTime(end)}`;
-        }
-        
-        function formatPauseDuration(end, nextStart) {
-            const pauseDuration = nextStart - end;
-            if (pauseDuration < 1) {
-                return `${Math.round(pauseDuration * 10) / 10}s pause`;
-            } else {
-                return `${Math.round(pauseDuration * 10) / 10}s pause`;
             }
         }
     </script>
