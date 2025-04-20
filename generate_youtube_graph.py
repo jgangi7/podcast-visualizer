@@ -1,21 +1,32 @@
 import graphviz
 import os
 from datetime import datetime
+from llm_processor import TranscriptProcessor
+import re
 
 def format_timestamp(seconds):
     """Convert seconds to HH:MM:SS format"""
     return str(datetime.utcfromtimestamp(seconds).strftime('%H:%M:%S'))
 
-def generate_youtube_chapters_flow(chapters):
+def generate_youtube_chapters_flow(chapters, transcript_text=None):
     """
-    Generate a flowchart from YouTube chapters data
+    Generate a flowchart from YouTube chapters data with LLM-processed information
     
     Args:
         chapters: List of dictionaries containing chapter data
                  Each dict should have 'title' and 'start_time' keys
+        transcript_text: Optional full transcript text to process for each chapter
     Returns:
         str: SVG content of the generated graph
     """
+    # Initialize LLM processor if transcript is provided
+    processor = None
+    if transcript_text:
+        try:
+            processor = TranscriptProcessor()
+        except Exception as e:
+            print(f"Failed to initialize LLM processor: {str(e)}")
+    
     # Create a new directed graph
     dot = graphviz.Digraph('YoutubeChaptersFlow')
     
@@ -58,25 +69,55 @@ def generate_youtube_chapters_flow(chapters):
         if i > 0:
             dot.edge(f"Chapter{i}", node_name, color='#90EE90', penwidth='2')
         
-        # Add some example subtopics for each chapter
-        dot.attr('node',
-            shape='box',
-            style='rounded,filled',
-            fillcolor='#f0f0f0',
-            fontsize='12',
-            width='1.5')
-        
-        # Add 2-3 subtopics per chapter
-        subtopics = [
-            "Main Points",
-            "Key Discussion",
-            "Related Topics"
-        ]
-        
-        for j, subtopic in enumerate(subtopics):
-            subtopic_name = f"Topic{i+1}_{j+1}"
-            dot.node(subtopic_name, subtopic)
-            dot.edge(node_name, subtopic_name, color='#666666', penwidth='1')
+        # Process chapter text with LLM if available
+        if processor and transcript_text:
+            try:
+                # Extract chapter text from transcript
+                start_time = chapter['start_time']
+                end_time = chapters[i+1]['start_time'] if i < len(chapters)-1 else float('inf')
+                
+                # Extract text between timestamps
+                chapter_lines = []
+                for line in transcript_text.split('\n'):
+                    if line.strip():
+                        time_match = re.match(r'(\d{2}):(\d{2})\s*-\s*', line)
+                        if time_match:
+                            minutes, seconds = map(int, time_match.groups())
+                            line_time = minutes * 60 + seconds
+                            if start_time <= line_time < end_time:
+                                chapter_lines.append(line)
+                
+                chapter_text = '\n'.join(chapter_lines)
+                
+                # Process chapter text
+                if chapter_text:
+                    results = processor.process_segment(chapter_text)
+                    formatted_results = processor.format_for_visualization(results)
+                    
+                    # Add result nodes
+                    dot.attr('node',
+                        shape='box',
+                        style='rounded,filled',
+                        fillcolor='#f0f0f0',
+                        fontsize='12',
+                        width='2')
+                    
+                    for category, text in formatted_results.items():
+                        node_id = f"{node_name}_{category}"
+                        dot.node(node_id, text)
+                        dot.edge(node_name, node_id, color='#666666', penwidth='1')
+            
+            except Exception as e:
+                print(f"Error processing chapter {i+1}: {str(e)}")
+                # Add error node
+                dot.attr('node',
+                    shape='box',
+                    style='rounded,filled',
+                    fillcolor='#ffcccc',
+                    fontsize='12',
+                    width='1.5')
+                dot.node(f"{node_name}_error", "Failed to process chapter")
+                dot.edge(node_name, f"{node_name}_error", color='#ff0000', penwidth='1')
         
         # Set rank for clock and chapter
         with dot.subgraph() as s:
