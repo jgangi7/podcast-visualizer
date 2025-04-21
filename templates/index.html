@@ -68,6 +68,11 @@
         </div>
 
         <div id="transcriptContainer" class="transcript-container"></div>
+        
+        <div id="chunksContainer" class="chunks-container" style="display: none;">
+            <h3 class="mb-3">Transcript by Chapters</h3>
+            <div id="chunksContent"></div>
+        </div>
     </div>
 
     <script>
@@ -116,6 +121,7 @@
             document.getElementById('error').style.display = 'none';
             document.getElementById('transcriptContainer').style.display = 'none';
             document.getElementById('chaptersContainer').style.display = 'none';
+            document.getElementById('chunksContainer').style.display = 'none';
 
             // Send request to server
             fetch('/get_transcript', {
@@ -143,6 +149,9 @@
                         displayChapters(data.chapters);
                         document.getElementById('chaptersContainer').style.display = 'block';
                     }
+                    if (data.transcript_chunks && data.transcript_chunks.length > 0) {
+                        displayChunks(data.transcript_chunks);
+                    }
                 }
             })
             .catch(error => {
@@ -154,6 +163,7 @@
 
         function displayTranscript(transcript) {
             const container = document.getElementById('transcriptContainer');
+            container.innerHTML = ''; // Clear previous content
             const lines = transcript.split('\n');
             
             lines.forEach(line => {
@@ -208,6 +218,33 @@
                     }
                 };
                 content.appendChild(div);
+            });
+            
+            container.style.display = 'block';
+        }
+
+        function displayChunks(chunks) {
+            const container = document.getElementById('chunksContainer');
+            const content = document.getElementById('chunksContent');
+            content.innerHTML = '';
+            
+            chunks.forEach(chunk => {
+                const chunkDiv = document.createElement('div');
+                chunkDiv.className = 'chunk-section mb-4';
+                
+                const chapterTitle = document.createElement('h4');
+                chapterTitle.className = 'chapter-title mb-3';
+                chapterTitle.textContent = chunk.chapter;
+                
+                const chunkText = document.createElement('div');
+                chunkText.className = 'chunk-text';
+                chunkText.innerHTML = chunk.text.split('\n').map(line => 
+                    `<div class="chunk-line">${line}</div>`
+                ).join('');
+                
+                chunkDiv.appendChild(chapterTitle);
+                chunkDiv.appendChild(chunkText);
+                content.appendChild(chunkDiv);
             });
             
             container.style.display = 'block';

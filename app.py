@@ -80,6 +80,66 @@ def get_video_chapters(video_id):
         print(f"Error fetching chapters: {str(e)}")
         return []
 
+def parse_transcript_chunks(transcript_text: str, chapters: list) -> list:
+    """Parse transcript into chunks based on chapter timestamps"""
+    chunks = []
+    lines = transcript_text.strip().split('\n')
+    
+    # Sort chapters by time
+    sorted_chapters = sorted(chapters, key=lambda x: x['time'])
+    
+    # Add a final "chapter" at the end to capture the last section
+    if sorted_chapters:
+        last_chapter = sorted_chapters[-1]
+        sorted_chapters.append({
+            'time': float('inf'),
+            'title': 'End'
+        })
+    
+    current_chunk = []
+    current_chapter_index = 0
+    
+    for line in lines:
+        # Extract timestamp from line
+        timestamp_match = re.match(r'^(\d{1,2}:\d{2}(?::\d{2})?)\s*-\s*(.+)$', line)
+        if not timestamp_match:
+            continue
+            
+        timestamp_str, text = timestamp_match.groups()
+        
+        # Convert timestamp to seconds
+        time_parts = timestamp_str.split(':')
+        if len(time_parts) == 3:
+            hours, minutes, seconds = map(int, time_parts)
+            current_time = hours * 3600 + minutes * 60 + seconds
+        else:
+            minutes, seconds = map(int, time_parts)
+            current_time = minutes * 60 + seconds
+        
+        # Check if we've moved to a new chapter
+        while (current_chapter_index < len(sorted_chapters) and 
+               current_time >= sorted_chapters[current_chapter_index]['time']):
+            # Save the current chunk if it's not empty
+            if current_chunk:
+                chunks.append({
+                    'chapter': sorted_chapters[current_chapter_index]['title'],
+                    'text': '\n'.join(current_chunk)
+                })
+            current_chunk = []
+            current_chapter_index += 1
+        
+        # Add the text without timestamp to the current chunk
+        current_chunk.append(text)
+    
+    # Add the final chunk if there's anything left
+    if current_chunk and current_chapter_index < len(sorted_chapters):
+        chunks.append({
+            'chapter': sorted_chapters[current_chapter_index]['title'],
+            'text': '\n'.join(current_chunk)
+        })
+    
+    return chunks
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -111,11 +171,15 @@ def get_transcript():
             timestamp = f"{minutes:02d}:{seconds:02d}"
             transcript_text += f"{timestamp} - {segment['text']}\n"
         
-        # Return both transcript and chapters
+        # Parse transcript into chunks based on chapters
+        transcript_chunks = parse_transcript_chunks(transcript_text, chapters)
+        
+        # Return transcript, chapters, and chunks
         return jsonify({
             'success': True,
             'transcript': transcript_text,
-            'chapters': chapters
+            'chapters': chapters,
+            'transcript_chunks': transcript_chunks
         })
         
     except Exception as e:
