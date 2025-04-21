@@ -4,111 +4,110 @@ This is a web application that analyzes YouTube podcast transcripts using the Gr
 
 ## Features
 
-- **YouTube Transcript Extraction**: Automatically fetches transcripts from YouTube videos
-- **Chapter-Based Analysis**: Organizes content by video chapters for better context
-- **Grok AI Analysis**: Uses the Grok-beta API to extract:
-  - Main talking points (core arguments, key statements, central ideas)
-  - Related topics (connected subjects, references, tangential ideas)
-- **Interactive UI**: 
-  - Dark/light theme support
-  - Chapter navigation
-  - Collapsible transcript sections
-  - Responsive design for all devices
+- **Automatic Transcript Generation**: Fetches and processes YouTube video transcripts
+- **Chapter Detection**: Automatically identifies and extracts chapters from video descriptions
+- **Chapter Navigation**: Click on chapters to jump to specific timestamps in the transcript
+- **Interactive Flow Chart**: Visualizes the podcast structure with:
+  - Color-coded chapter sections
+  - Key points from each chapter
+  - Related topics and connections
+  - Pan and zoom functionality for easy navigation
+  - Export available
+- **Dark/Light Mode**: Toggle between themes for comfortable viewing
 
-## Requirements
+## Technologies Used
 
-- Python 3.6+
-- YouTube API key (for chapter extraction)
-- xAI API key (for Grok-beta analysis)
-- Required Python packages (see requirements.txt)
+### Backend
+- **Flask**: Python web framework for the backend server
+- **youtube-transcript-api**: For fetching YouTube video transcripts
+- **Google API Client**: For accessing YouTube Data API (chapter information)
+- **Graphviz**: For generating the flow chart visualizations
+- **Grok-Beta API**: For analyzing transcript content and extracting insights (requires xAI API key)
 
-## Installation
+### Frontend
+- **HTML/CSS/JavaScript**: Core web technologies
+- **Bootstrap**: For responsive design and UI components
+- **SVG Pan-Zoom**: For interactive flow chart navigation
+- **save-svg-as-png**: For exporting flow charts as PNG files
+- **svg2pdf.js**: For exporting flow charts as PDF files
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/podcast-visualizer.git
-   cd podcast-visualizer
-   ```
+## Setup
 
-2. Install the required packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+1. Clone the repository:
+```bash
+git clone [repository-url]
+cd podcast-visualizer
+```
 
-3. Create a `.env` file in the project root with your API keys:
-   ```
-   YOUTUBE_API_KEY=your_youtube_api_key_here
-   XAI_API_KEY=your_xai_api_key_here
-   ```
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-4. Download required NLTK data:
-   ```bash
-   python download_nltk_data.py
-   ```
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+4. Install Graphviz:
+- **Windows**: Download and install from [Graphviz website](https://graphviz.org/download/)
+- **Mac**: `brew install graphviz`
+- **Linux**: `sudo apt-get install graphviz`
+
+5. Set up environment variables:
+Create a `.env` file in the project root with:
+```
+YOUTUBE_API_KEY=your_youtube_api_key
+XAI_API_KEY=your_xai_api_key
+```
+
+6. Run the application:
+```bash
+python app.py
+```
+
+The application will be available at `http://localhost:5000`
 
 ## Usage
 
-1. Start the Flask server:
-   ```bash
-   python app.py
-   ```
+1. **Input**: Paste a YouTube URL of a podcast or long-form video
+2. **Processing**: The application will:
+   - Fetch the video transcript
+   - Extract chapters
+   - Analyze the content
+   - Generate visualizations
 
-2. Open your browser and navigate to:
-   ```
-   http://localhost:5000
-   ```
+3. **Navigation**:
+   - Use the chapter list to jump to specific sections
+   - Pan and zoom the flow chart using mouse controls
+   - Click the theme toggle for dark/light mode
+   - Export the flow chart using the export button
 
-3. Enter a YouTube URL in the input field and click "Visualize"
+4. **Flow Chart Controls**:
+   - Click and drag to pan
+   - Use mouse wheel or buttons to zoom
+   - Use reset button to return to original view
+   - Export as PNG or PDF for sharing
 
-4. Wait for the analysis to complete (this may take a few minutes)
+## API Keys
 
-5. View the analysis results organized by chapters
+- **YouTube API Key**: Required for fetching chapter information. Get it from [Google Cloud Console](https://console.cloud.google.com/)
+- **OpenAI API Key**: Required for content analysis. Get it from [OpenAI Platform](https://platform.openai.com/)
 
-## Compatible YouTube Videos
+## Limitations
 
-The application works best with YouTube videos that have:
+- Works best with videos that have:
+  - Available transcripts (auto-generated or manual)
+  - Chapter markers in the description (currently working to make it work for pods with no chapters too)
+- Processing time varies based on video length
+- Requires active internet connection
+- API rate limits apply
 
-1. **Available Transcripts**: The video must have captions/subtitles available
-2. **Chapter Markers**: The video description should include chapter timestamps in the format:
-   ```
-   00:00 Introduction
-   05:30 Main Topic
-   15:45 Conclusion
-   ```
+## Contributing
 
-### Finding Compatible Videos
-
-- Most professional podcasts on YouTube include chapter markers
-- Educational content often has well-structured chapters
-- Look for videos with a table of contents in the description
-
-### Limitations
-
-- Videos without chapter markers will not be properly segmented
-- Videos without transcripts cannot be analyzed
-- Private or age-restricted videos may not be accessible
-
-## How It Works
-
-1. **Transcript Extraction**: The app uses the YouTube Transcript API to fetch the transcript
-2. **Chapter Detection**: YouTube Data API extracts chapter information from the video description
-3. **Text Segmentation**: The transcript is divided into chunks based on chapter timestamps
-4. **AI Analysis**: Each chunk is analyzed by the Grok-beta API to extract main points and related topics
-5. **Visualization**: Results are displayed in an organized, interactive interface
-
-## Customization
-
-- Modify `grok_analyzer.py` to adjust the analysis parameters
-- Edit `static/css/styles.css` to customize the appearance
-- Update `templates/index.html` to change the layout
-
-## Troubleshooting
-
-- **API Key Issues**: Ensure your API keys are correctly set in the `.env` file
-- **Missing Transcripts**: Some videos may have disabled captions
-- **No Chapters**: Videos without chapter markers will show all content in one section
-- **Rate Limiting**: The Grok API has rate limits; the app includes retry logic
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT License 
+This project is licensed under the MIT License - see the LICENSE file for details. 
