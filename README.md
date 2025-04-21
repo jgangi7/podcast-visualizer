@@ -1,88 +1,113 @@
-# Grok Conversation Analyzer
+# YouTube Podcast Visualizer
 
-This Python script uses the xAI Grok API to analyze conversations and extract main points and related topics. It uses the OpenAI Python SDK for compatibility with xAI's API.
+This is a web application that analyzes YouTube podcast transcripts using the Grok-beta API to extract main talking points and related topics. The app visualizes the analysis results in an organized, chapter-by-chapter format. I built this with the intention that if you would like to get the "spark-notes" from a long form complex conversation posted to Youtube (thank you to all creators who do post thier pods) you could simply paste a link and get as much or as little insight as you would like.
 
 ## Features
 
-- Analyzes conversations using the Grok-beta model
-- Extracts main points and related topics
-- Handles API errors and rate limits with retry logic
-- Saves analysis results to a file
-- Includes a sample conversation for testing
-- Optional Flask integration for web API usage
-- Secure API key storage using .env file
+- **YouTube Transcript Extraction**: Automatically fetches transcripts from YouTube videos
+- **Chapter-Based Analysis**: Organizes content by video chapters for better context
+- **Grok AI Analysis**: Uses the Grok-beta API to extract:
+  - Main talking points (core arguments, key statements, central ideas)
+  - Related topics (connected subjects, references, tangential ideas)
+- **Interactive UI**: 
+  - Dark/light theme support
+  - Chapter navigation
+  - Collapsible transcript sections
+  - Responsive design for all devices
 
 ## Requirements
 
 - Python 3.6+
-- xAI API key (get it from https://x.ai)
+- YouTube API key (for chapter extraction)
+- xAI API key (for Grok-beta analysis)
 - Required Python packages (see requirements.txt)
 
 ## Installation
 
-1. Clone this repository or download the files
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/yourusername/podcast-visualizer.git
+   cd podcast-visualizer
+   ```
+
 2. Install the required packages:
    ```bash
    pip install -r requirements.txt
    ```
-3. Create a `.env` file in the project root and add your API key:
+
+3. Create a `.env` file in the project root with your API keys:
    ```
-   XAI_API_KEY=your_api_key_here
+   YOUTUBE_API_KEY=your_youtube_api_key_here
+   XAI_API_KEY=your_xai_api_key_here
+   ```
+
+4. Download required NLTK data:
+   ```bash
+   python download_nltk_data.py
    ```
 
 ## Usage
 
-1. Make sure your `.env` file contains your xAI API key:
-   ```
-   XAI_API_KEY=your_api_key_here
-   ```
-
-2. Run the script:
+1. Start the Flask server:
    ```bash
-   python grok_analyzer.py
+   python app.py
    ```
 
-3. The script will:
-   - Analyze the sample conversation
-   - Display the results in the console
-   - Save the analysis to `analysis.txt`
-
-## Web API Integration
-
-The script includes a Flask integration example in the comments. To use it:
-
-1. Uncomment the Flask code at the bottom of the script
-2. Run the Flask server:
-   ```bash
-   python grok_analyzer.py
+2. Open your browser and navigate to:
    ```
-3. Send POST requests to `/analyze` with a JSON body containing the conversation:
-   ```json
-   {
-     "conversation": "Your conversation text here"
-   }
+   http://localhost:5000
    ```
+
+3. Enter a YouTube URL in the input field and click "Visualize"
+
+4. Wait for the analysis to complete (this may take a few minutes)
+
+5. View the analysis results organized by chapters
+
+## Compatible YouTube Videos
+
+The application works best with YouTube videos that have:
+
+1. **Available Transcripts**: The video must have captions/subtitles available
+2. **Chapter Markers**: The video description should include chapter timestamps in the format:
+   ```
+   00:00 Introduction
+   05:30 Main Topic
+   15:45 Conclusion
+   ```
+
+### Finding Compatible Videos
+
+- Most professional podcasts on YouTube include chapter markers
+- Educational content often has well-structured chapters
+- Look for videos with a table of contents in the description
+
+### Limitations
+
+- Videos without chapter markers will not be properly segmented
+- Videos without transcripts cannot be analyzed
+- Private or age-restricted videos may not be accessible
+
+## How It Works
+
+1. **Transcript Extraction**: The app uses the YouTube Transcript API to fetch the transcript
+2. **Chapter Detection**: YouTube Data API extracts chapter information from the video description
+3. **Text Segmentation**: The transcript is divided into chunks based on chapter timestamps
+4. **AI Analysis**: Each chunk is analyzed by the Grok-beta API to extract main points and related topics
+5. **Visualization**: Results are displayed in an organized, interactive interface
 
 ## Customization
 
-- Modify `SAMPLE_CONVERSATION` in the script to analyze different conversations
-- Adjust `MAX_RETRIES` and `INITIAL_RETRY_DELAY` for different retry behavior
-- Change the output file name in `save_analysis()` function
+- Modify `grok_analyzer.py` to adjust the analysis parameters
+- Edit `static/css/styles.css` to customize the appearance
+- Update `templates/index.html` to change the layout
 
-## Error Handling
+## Troubleshooting
 
-The script includes comprehensive error handling for:
-- Missing API key
-- API authentication errors
-- Rate limiting (with exponential backoff)
-- File I/O errors
-
-## Security Notes
-
-- The API key is stored in the `.env` file, which should be added to `.gitignore`
-- Never commit your `.env` file to version control
-- The script will prompt for the API key if not found in the `.env` file
-- When prompted, the script will attempt to save the API key to the `.env` file for future use
+- **API Key Issues**: Ensure your API keys are correctly set in the `.env` file
+- **Missing Transcripts**: Some videos may have disabled captions
+- **No Chapters**: Videos without chapter markers will show all content in one section
+- **Rate Limiting**: The Grok API has rate limits; the app includes retry logic
 
 ## License
 
