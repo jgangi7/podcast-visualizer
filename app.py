@@ -4,6 +4,7 @@ from googleapiclient.discovery import build
 import re
 import os
 from dotenv import load_dotenv
+from grok_analyzer import extract_insights_from_chunk
 
 # Load environment variables from .env file
 load_dotenv()
@@ -208,7 +209,13 @@ def get_transcript():
         # Parse transcript into chunks based on chapters
         transcript_chunks = parse_transcript_chunks(transcript_text, chapters)
         
-        # Return transcript, chapters, and chunks
+        # Analyze each chunk using Grok
+        for chunk in transcript_chunks:
+            analysis = extract_insights_from_chunk(chunk['text'])
+            chunk['main_points'] = analysis['main_points']
+            chunk['related_topics'] = analysis['related_topics']
+        
+        # Return transcript, chapters, and analyzed chunks
         return jsonify({
             'success': True,
             'transcript': transcript_text,

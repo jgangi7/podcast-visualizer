@@ -1,93 +1,89 @@
-# YouTube Transcript Analyzer
+# Grok Conversation Analyzer
 
-A web application that analyzes YouTube video transcripts using open-source language models to extract topics, entities, and conversation structure.
+This Python script uses the xAI Grok API to analyze conversations and extract main points and related topics. It uses the OpenAI Python SDK for compatibility with xAI's API.
 
 ## Features
 
-- YouTube transcript extraction with timestamps
-- Zero-shot topic classification using BART
-- Named entity recognition using BERT and spaCy
-- Conversation tree visualization
-- Interactive timeline view
-- No API keys required - everything runs locally
+- Analyzes conversations using the Grok-beta model
+- Extracts main points and related topics
+- Handles API errors and rate limits with retry logic
+- Saves analysis results to a file
+- Includes a sample conversation for testing
+- Optional Flask integration for web API usage
+- Secure API key storage using .env file
 
 ## Requirements
 
-- Python 3.8+
-- pip (Python package manager)
+- Python 3.6+
+- xAI API key (get it from https://x.ai)
+- Required Python packages (see requirements.txt)
 
 ## Installation
 
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/youtube-transcript-analyzer.git
-cd youtube-transcript-analyzer
-```
-
-2. Create a virtual environment (recommended):
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-4. Download spaCy model:
-```bash
-python -m spacy download en_core_web_sm
-```
+1. Clone this repository or download the files
+2. Install the required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Create a `.env` file in the project root and add your API key:
+   ```
+   XAI_API_KEY=your_api_key_here
+   ```
 
 ## Usage
 
-1. Start the Flask server:
-```bash
-python app.py
-```
+1. Make sure your `.env` file contains your xAI API key:
+   ```
+   XAI_API_KEY=your_api_key_here
+   ```
 
-2. Open your web browser and navigate to:
-```
-http://localhost:5000
-```
+2. Run the script:
+   ```bash
+   python grok_analyzer.py
+   ```
 
-3. Enter a YouTube URL and click "Analyze Transcript"
+3. The script will:
+   - Analyze the sample conversation
+   - Display the results in the console
+   - Save the analysis to `analysis.txt`
 
-4. View the analysis results:
-   - Topics with confidence scores
-   - Named entities grouped by type
-   - Interactive conversation timeline
-   - Full transcript with timestamps
+## Web API Integration
 
-## How It Works
+The script includes a Flask integration example in the comments. To use it:
 
-1. **Transcript Extraction**: Uses the YouTube Transcript API to fetch video transcripts with timestamps.
+1. Uncomment the Flask code at the bottom of the script
+2. Run the Flask server:
+   ```bash
+   python grok_analyzer.py
+   ```
+3. Send POST requests to `/analyze` with a JSON body containing the conversation:
+   ```json
+   {
+     "conversation": "Your conversation text here"
+   }
+   ```
 
-2. **Topic Classification**: Uses BART-large-MNLI for zero-shot classification of transcript segments into predefined topics.
+## Customization
 
-3. **Entity Recognition**: Combines BERT and spaCy for comprehensive named entity extraction.
+- Modify `SAMPLE_CONVERSATION` in the script to analyze different conversations
+- Adjust `MAX_RETRIES` and `INITIAL_RETRY_DELAY` for different retry behavior
+- Change the output file name in `save_analysis()` function
 
-4. **Conversation Tree**: Builds a hierarchical structure of the conversation using NetworkX.
+## Error Handling
 
-5. **Visualization**: Creates both static (PNG) and interactive (HTML) visualizations using Plotly.
+The script includes comprehensive error handling for:
+- Missing API key
+- API authentication errors
+- Rate limiting (with exponential backoff)
+- File I/O errors
 
-## Project Structure
+## Security Notes
 
-```
-youtube-transcript-analyzer/
-├── app.py                 # Main Flask application
-├── llm_analyzer.py        # LLM-based analysis module
-├── requirements.txt       # Python dependencies
-├── static/               # Static files (visualizations)
-└── templates/            # HTML templates
-    └── index.html        # Main web interface
-```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+- The API key is stored in the `.env` file, which should be added to `.gitignore`
+- Never commit your `.env` file to version control
+- The script will prompt for the API key if not found in the `.env` file
+- When prompted, the script will attempt to save the API key to the `.env` file for future use
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+MIT License 

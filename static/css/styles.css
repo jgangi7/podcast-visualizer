@@ -294,4 +294,35 @@ h1 {
 
 .chunk-line:last-child {
     margin-bottom: 0;
+}
+
+.analysis-section {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: var(--card-bg);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.analysis-section h5 {
+    color: var(--text-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.analysis-section ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.analysis-section li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+.analysis-section li:last-child {
+    border-bottom: none;
 } 

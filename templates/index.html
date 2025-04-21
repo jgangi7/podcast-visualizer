@@ -229,22 +229,66 @@
             content.innerHTML = '';
             
             chunks.forEach(chunk => {
-                const chunkDiv = document.createElement('div');
-                chunkDiv.className = 'chunk-section mb-4';
+                const section = document.createElement('div');
+                section.className = 'chunk-section';
                 
-                const chapterTitle = document.createElement('h4');
-                chapterTitle.className = 'chapter-title mb-3';
-                chapterTitle.textContent = chunk.chapter;
+                // Create chapter title
+                const title = document.createElement('h4');
+                title.className = 'chapter-title';
+                title.textContent = chunk.chapter;
+                section.appendChild(title);
                 
-                const chunkText = document.createElement('div');
-                chunkText.className = 'chunk-text';
-                chunkText.innerHTML = chunk.text.split('\n').map(line => 
-                    `<div class="chunk-line">${line}</div>`
-                ).join('');
+                // Create main points section
+                if (chunk.main_points && chunk.main_points.length > 0) {
+                    const mainPointsDiv = document.createElement('div');
+                    mainPointsDiv.className = 'analysis-section';
+                    
+                    const mainPointsTitle = document.createElement('h5');
+                    mainPointsTitle.textContent = 'Main Points:';
+                    mainPointsDiv.appendChild(mainPointsTitle);
+                    
+                    const mainPointsList = document.createElement('ul');
+                    chunk.main_points.forEach(point => {
+                        const li = document.createElement('li');
+                        li.textContent = point;
+                        mainPointsList.appendChild(li);
+                    });
+                    mainPointsDiv.appendChild(mainPointsList);
+                    section.appendChild(mainPointsDiv);
+                }
                 
-                chunkDiv.appendChild(chapterTitle);
-                chunkDiv.appendChild(chunkText);
-                content.appendChild(chunkDiv);
+                // Create related topics section
+                if (chunk.related_topics && chunk.related_topics.length > 0) {
+                    const topicsDiv = document.createElement('div');
+                    topicsDiv.className = 'analysis-section';
+                    
+                    const topicsTitle = document.createElement('h5');
+                    topicsTitle.textContent = 'Related Topics:';
+                    topicsDiv.appendChild(topicsTitle);
+                    
+                    const topicsList = document.createElement('ul');
+                    chunk.related_topics.forEach(topic => {
+                        const li = document.createElement('li');
+                        li.textContent = topic;
+                        topicsList.appendChild(li);
+                    });
+                    topicsDiv.appendChild(topicsList);
+                    section.appendChild(topicsDiv);
+                }
+                
+                // Create transcript text section
+                const textDiv = document.createElement('div');
+                textDiv.className = 'chunk-text';
+                const lines = chunk.text.split('\n');
+                lines.forEach(line => {
+                    const p = document.createElement('p');
+                    p.className = 'chunk-line';
+                    p.textContent = line;
+                    textDiv.appendChild(p);
+                });
+                section.appendChild(textDiv);
+                
+                content.appendChild(section);
             });
             
             container.style.display = 'block';
