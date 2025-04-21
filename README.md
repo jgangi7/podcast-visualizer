@@ -1,30 +1,45 @@
-# YouTube Transcript Analyzer
+# YouTube Podcast Visualizer
 
-A web application that analyzes YouTube video transcripts using open-source language models to extract topics, entities, and conversation structure.
+This is a web application that analyzes YouTube podcast transcripts using the Grok-beta API to extract main talking points and related topics. The app visualizes the analysis results in an organized, chapter-by-chapter format. I built this with the intention that if you would like to get the "spark-notes" from a long form complex conversation posted to Youtube (thank you to all creators who do post thier pods) you could simply paste a link and get as much or as little insight as you would like.
 
 ## Features
 
-- YouTube transcript extraction with timestamps
-- Zero-shot topic classification using BART
-- Named entity recognition using BERT and spaCy
-- Conversation tree visualization
-- Interactive timeline view
-- No API keys required - everything runs locally
+- **Automatic Transcript Generation**: Fetches and processes YouTube video transcripts
+- **Chapter Detection**: Automatically identifies and extracts chapters from video descriptions
+- **Chapter Navigation**: Click on chapters to jump to specific timestamps in the transcript
+- **Interactive Flow Chart**: Visualizes the podcast structure with:
+  - Color-coded chapter sections
+  - Key points from each chapter
+  - Related topics and connections
+  - Pan and zoom functionality for easy navigation
+  - Export available
+- **Dark/Light Mode**: Toggle between themes for comfortable viewing
 
-## Requirements
+## Technologies Used
 
-- Python 3.8+
-- pip (Python package manager)
+### Backend
+- **Flask**: Python web framework for the backend server
+- **youtube-transcript-api**: For fetching YouTube video transcripts
+- **Google API Client**: For accessing YouTube Data API (chapter information)
+- **Graphviz**: For generating the flow chart visualizations
+- **Grok-Beta API**: For analyzing transcript content and extracting insights (requires xAI API key)
 
-## Installation
+### Frontend
+- **HTML/CSS/JavaScript**: Core web technologies
+- **Bootstrap**: For responsive design and UI components
+- **SVG Pan-Zoom**: For interactive flow chart navigation
+- **save-svg-as-png**: For exporting flow charts as PNG files
+- **svg2pdf.js**: For exporting flow charts as PDF files
+
+## Setup
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/youtube-transcript-analyzer.git
-cd youtube-transcript-analyzer
+git clone [repository-url]
+cd podcast-visualizer
 ```
 
-2. Create a virtual environment (recommended):
+2. Create and activate a virtual environment:
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -35,54 +50,59 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Download spaCy model:
-```bash
-python -m spacy download en_core_web_sm
+4. Install Graphviz:
+- **Windows**: Download and install from [Graphviz website](https://graphviz.org/download/)
+- **Mac**: `brew install graphviz`
+- **Linux**: `sudo apt-get install graphviz`
+
+5. Set up environment variables:
+Create a `.env` file in the project root with:
+```
+YOUTUBE_API_KEY=your_youtube_api_key
+XAI_API_KEY=your_xai_api_key
 ```
 
-## Usage
-
-1. Start the Flask server:
+6. Run the application:
 ```bash
 python app.py
 ```
 
-2. Open your web browser and navigate to:
-```
-http://localhost:5000
-```
+The application will be available at `http://localhost:5000`
 
-3. Enter a YouTube URL and click "Analyze Transcript"
+## Usage
 
-4. View the analysis results:
-   - Topics with confidence scores
-   - Named entities grouped by type
-   - Interactive conversation timeline
-   - Full transcript with timestamps
+1. **Input**: Paste a YouTube URL of a podcast or long-form video
+2. **Processing**: The application will:
+   - Fetch the video transcript
+   - Extract chapters
+   - Analyze the content
+   - Generate visualizations
 
-## How It Works
+3. **Navigation**:
+   - Use the chapter list to jump to specific sections
+   - Pan and zoom the flow chart using mouse controls
+   - Click the theme toggle for dark/light mode
+   - Export the flow chart using the export button
 
-1. **Transcript Extraction**: Uses the YouTube Transcript API to fetch video transcripts with timestamps.
+4. **Flow Chart Controls**:
+   - Click and drag to pan
+   - Use mouse wheel or buttons to zoom
+   - Use reset button to return to original view
+   - Export as PNG or PDF for sharing
 
-2. **Topic Classification**: Uses BART-large-MNLI for zero-shot classification of transcript segments into predefined topics.
+## API Keys
 
-3. **Entity Recognition**: Combines BERT and spaCy for comprehensive named entity extraction.
+- **YouTube API Key**: Required for fetching chapter information. Get it from [Google Cloud Console](https://console.cloud.google.com/)
+- **OpenAI API Key**: Required for content analysis. Get it from [OpenAI Platform](https://platform.openai.com/)
 
-4. **Conversation Tree**: Builds a hierarchical structure of the conversation using NetworkX.
+## Limitations
 
-5. **Visualization**: Creates both static (PNG) and interactive (HTML) visualizations using Plotly.
-
-## Project Structure
-
-```
-youtube-transcript-analyzer/
-├── app.py                 # Main Flask application
-├── llm_analyzer.py        # LLM-based analysis module
-├── requirements.txt       # Python dependencies
-├── static/               # Static files (visualizations)
-└── templates/            # HTML templates
-    └── index.html        # Main web interface
-```
+- Works best with videos that have:
+  - Available transcripts (auto-generated or manual)
+  - Chapter markers in the description (currently working to make it work for pods with no chapters too)
+- Processing time varies based on video length
+- Requires active internet connection
+- API rate limits apply
 
 ## Contributing
 
