@@ -83,60 +83,94 @@ def get_video_chapters(video_id):
 def parse_transcript_chunks(transcript_text: str, chapters: list) -> list:
     """Parse transcript into chunks based on chapter timestamps"""
     chunks = []
-    lines = transcript_text.strip().split('\n')
+    lines = transcript_text.split('\n')
     
     # Sort chapters by time
     sorted_chapters = sorted(chapters, key=lambda x: x['time'])
     
+    # If no chapters, return empty list
+    if not sorted_chapters:
+        return []
+    
     # Add a final "chapter" at the end to capture the last section
-    if sorted_chapters:
-        last_chapter = sorted_chapters[-1]
-        sorted_chapters.append({
-            'time': float('inf'),
-            'title': 'End'
-        })
+    sorted_chapters.append({
+        'time': float('inf'),
+        'title': 'End'
+    })
     
-    current_chunk = []
-    current_chapter_index = 0
-    
-    for line in lines:
-        # Extract timestamp from line
+    # Create a list of lines with their timestamps (if available)
+    indexed_lines = []
+    for i, line in enumerate(lines):
+        # Extract timestamp from line if available
         timestamp_match = re.match(r'^(\d{1,2}:\d{2}(?::\d{2})?)\s*-\s*(.+)$', line)
-        if not timestamp_match:
-            continue
+        if timestamp_match:
+            timestamp_str, text = timestamp_match.groups()
             
-        timestamp_str, text = timestamp_match.groups()
-        
-        # Convert timestamp to seconds
-        time_parts = timestamp_str.split(':')
-        if len(time_parts) == 3:
-            hours, minutes, seconds = map(int, time_parts)
-            current_time = hours * 3600 + minutes * 60 + seconds
+            # Convert timestamp to seconds
+            time_parts = timestamp_str.split(':')
+            if len(time_parts) == 3:
+                hours, minutes, seconds = map(int, time_parts)
+                current_time = hours * 3600 + minutes * 60 + seconds
+            else:
+                minutes, seconds = map(int, time_parts)
+                current_time = minutes * 60 + seconds
+                
+            indexed_lines.append({
+                'index': i,
+                'line': line,
+                'text': text,
+                'time': current_time,
+                'has_timestamp': True
+            })
         else:
-            minutes, seconds = map(int, time_parts)
-            current_time = minutes * 60 + seconds
-        
-        # Check if we've moved to a new chapter
-        while (current_chapter_index < len(sorted_chapters) and 
-               current_time >= sorted_chapters[current_chapter_index]['time']):
-            # Save the current chunk if it's not empty
-            if current_chunk:
-                chunks.append({
-                    'chapter': sorted_chapters[current_chapter_index]['title'],
-                    'text': '\n'.join(current_chunk)
-                })
-            current_chunk = []
-            current_chapter_index += 1
-        
-        # Add the text without timestamp to the current chunk
-        current_chunk.append(text)
+            # Line without timestamp
+            indexed_lines.append({
+                'index': i,
+                'line': line,
+                'text': line,
+                'time': None,
+                'has_timestamp': False
+            })
     
-    # Add the final chunk if there's anything left
-    if current_chunk and current_chapter_index < len(sorted_chapters):
-        chunks.append({
-            'chapter': sorted_chapters[current_chapter_index]['title'],
-            'text': '\n'.join(current_chunk)
-        })
+    # Process each chapter
+    for i in range(len(sorted_chapters) - 1):
+        current_chapter = sorted_chapters[i]
+        next_chapter = sorted_chapters[i + 1]
+        
+        # Find the first line with a timestamp that's >= current chapter time
+        start_index = None
+        for line_info in indexed_lines:
+            if line_info['has_timestamp'] and line_info['time'] >= current_chapter['time']:
+                start_index = line_info['index']
+                break
+        
+        # If no line found with timestamp >= current chapter time, use the first line
+        if start_index is None:
+            start_index = 0
+        
+        # Find the last line with a timestamp that's < next chapter time
+        end_index = None
+        for line_info in reversed(indexed_lines):
+            if line_info['has_timestamp'] and line_info['time'] < next_chapter['time']:
+                end_index = line_info['index']
+                break
+        
+        # If no line found with timestamp < next chapter time, use the last line
+        if end_index is None:
+            end_index = len(lines) - 1
+        
+        # Extract all lines between start_index and end_index (inclusive)
+        chunk_lines = []
+        for j in range(start_index, end_index + 1):
+            if j < len(indexed_lines):
+                chunk_lines.append(indexed_lines[j]['text'])
+        
+        # Add the chunk if it's not empty
+        if chunk_lines:
+            chunks.append({
+                'chapter': current_chapter['title'],
+                'text': '\n'.join(chunk_lines)
+            })
     
     return chunks
 
