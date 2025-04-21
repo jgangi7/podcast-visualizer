@@ -5,6 +5,7 @@ import re
 import os
 from dotenv import load_dotenv
 from grok_analyzer import extract_insights_from_chunk
+import graphviz
 
 # Load environment variables from .env file
 load_dotenv()
@@ -175,6 +176,107 @@ def parse_transcript_chunks(transcript_text: str, chapters: list) -> list:
     
     return chunks
 
+def generate_flow_chart(chunks):
+    # Create a new directed graph
+    dot = graphviz.Digraph(comment='Chapter Flow Visualization')
+    
+    # Set graph attributes for better visualization
+    dot.attr(rankdir='LR', splines='ortho')
+    dot.attr('node', fontname='Arial', style='filled', fontcolor='#333333')
+    
+    # Color palette for chapters (pastel colors that work well in both light/dark modes)
+    colors = [
+        '#FFB3BA',  # Light pink
+        '#BAFFC9',  # Light green
+        '#BAE1FF',  # Light blue
+        '#FFFFBA',  # Light yellow
+        '#E8BAFF',  # Light purple
+        '#FFD9BA',  # Light orange
+        '#B3FFE0',  # Light mint
+        '#FFB3E6',  # Light magenta
+    ]
+    
+    # For each chunk, create a subgraph for the chapter and its details
+    for i, chunk in enumerate(chunks):
+        chapter_color = colors[i % len(colors)]
+        
+        with dot.subgraph(name=f'cluster_{i}') as c:
+            # Set subgraph attributes
+            c.attr(
+                label=chunk['chapter'],
+                style='rounded,filled',
+                color=chapter_color,
+                fillcolor=f'{chapter_color}80',  # Add transparency
+                fontcolor='#333333',
+                penwidth='2'
+            )
+            
+            # Create main points node
+            if chunk['main_points']:
+                main_points_node = f'main_points_{i}'
+                c.node(
+                    main_points_node,
+                    'Key Points',
+                    shape='box',
+                    style='filled',
+                    fillcolor='white',
+                    margin='0.2'
+                )
+                
+                # Group main points in a more compact way
+                points_text = '• ' + '\n• '.join(chunk['main_points'])
+                point_node = f'points_{i}'
+                c.node(
+                    point_node,
+                    points_text,
+                    shape='box',
+                    style='filled,rounded',
+                    fillcolor='white',
+                    margin='0.2'
+                )
+                c.edge(main_points_node, point_node, style='dotted')
+            
+            # Create related topics node
+            if chunk['related_topics']:
+                topics_node = f'topics_{i}'
+                c.node(
+                    topics_node,
+                    'Related Topics',
+                    shape='box',
+                    style='filled',
+                    fillcolor='white',
+                    margin='0.2'
+                )
+                
+                # Group related topics in a more compact way
+                topics_text = '• ' + '\n• '.join(chunk['related_topics'])
+                topic_list_node = f'topic_list_{i}'
+                c.node(
+                    topic_list_node,
+                    topics_text,
+                    shape='box',
+                    style='filled,rounded',
+                    fillcolor='white',
+                    margin='0.2'
+                )
+                c.edge(topics_node, topic_list_node, style='dotted')
+            
+            # Connect main points and topics if both exist
+            if chunk['main_points'] and chunk['related_topics']:
+                c.edge(main_points_node, topics_node, style='dashed')
+        
+        # Connect chapters in sequence with a thicker, colored edge
+        if i > 0:
+            dot.edge(
+                f'main_points_{i-1}',
+                f'main_points_{i}',
+                color=chapter_color,
+                penwidth='2',
+                constraint='true'
+            )
+    
+    return dot
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -221,6 +323,30 @@ def get_transcript():
             'transcript': transcript_text,
             'chapters': chapters,
             'transcript_chunks': transcript_chunks
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/generate_flow_chart', methods=['POST'])
+def create_flow_chart():
+    try:
+        data = request.get_json()
+        chunks = data.get('chunks', [])
+        
+        if not chunks:
+            return jsonify({'error': 'No chunks provided'}), 400
+        
+        # Generate the flow chart
+        dot = generate_flow_chart(chunks)
+        
+        # Render the graph to a file
+        output_path = 'static/flow_chart'
+        dot.render(output_path, format='svg', cleanup=True)
+        
+        return jsonify({
+            'success': True,
+            'svg_path': output_path + '.svg'
         })
         
     except Exception as e:

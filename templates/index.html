@@ -69,13 +69,49 @@
         </div>
 
         <div id="chunksContainer" class="chunks-container" style="display: none;">
-            <h3 class="mb-3">Analysis Results</h3>
+            <h3>Chapter Analysis</h3>
             <div id="chunksContent"></div>
         </div>
 
-        <h3>Full Transcript</h3>
-        <div id="transcriptContainer" class="transcript-container"></div>
+        <!-- Add Flow Chart Container -->
+        <div id="flowChartContainer" class="flow-chart-container" style="display: none;">
+            <div class="flow-chart-header">
+                <h3>Chapter Flow Visualization</h3>
+                <div class="chart-controls">
+                    <div class="zoom-controls">
+                        <button class="zoom-btn" id="zoomIn" title="Zoom In">+</button>
+                        <button class="zoom-btn" id="zoomOut" title="Zoom Out">-</button>
+                        <button class="reset-btn" id="resetZoom" title="Reset Zoom">Reset</button>
+                    </div>
+                    <button class="export-btn" id="exportChart" title="Export as PNG">
+                        <span class="export-icon">⬇️</span> Export
+                    </button>
+                </div>
+            </div>
+            <div id="flowChartContent" class="flow-chart-content"></div>
+        </div>
+
+        <div id="transcriptSection" style="display: none;">
+            <h3>Full Transcript</h3>
+            <div id="transcriptContainer" class="transcript-container"></div>
+        </div>
     </div>
+
+    <!-- Include SVG Pan-Zoom library -->
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+    <!-- Include SVG Export library -->
+    <script src="https://cdn.jsdelivr.net/npm/save-svg-as-png@1.4.17/lib/saveSvgAsPng.js"></script>
+    <!-- Include PDF Export library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg2pdf.js/2.2.1/svg2pdf.umd.min.js"></script>
+
+    <!-- Export Format Dropdown Template -->
+    <template id="exportFormatTemplate">
+        <div class="export-dropdown">
+            <button class="export-format-btn">PNG</button>
+            <button class="export-format-btn">PDF</button>
+        </div>
+    </template>
 
     <!-- Include the external JavaScript file -->
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
